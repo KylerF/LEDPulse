@@ -36,7 +36,7 @@ int gamma[] = {
 #define LED_PIN 11
 
 #define NUM_LEDS 30
-#define BRIGHTNESS 60
+#define BRIGHTNESS 100
 
 int n = 0;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRBW + NEO_KHZ800);
@@ -75,24 +75,16 @@ void loop () {
   double peak = FFT.MajorPeak(vReal, SAMPLES, SAMPLING_FREQUENCY);
   int peakLed = map(peak, 0, 530, 0, 30);
 
-  //if (atThreshold) {
-    for(int i=0; i<(SAMPLES); i++)
-    {
-        /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
-        int brightness = constrain(map(vReal[i], 0, 80, 0, 255), 0, 255);
-        strip.setPixelColor(i, strip.Color(brightness,100,0,0));
-        strip.show();
-        //Serial.println(brightness);
-        //Serial.print((i * 1.0 * SAMPLING_FREQUENCY) / SAMPLES, 1);
-        //Serial.print(" ");
-        //Serial.println(vReal[i], 1);    //View only this line in serial plotter to visualize the bins
-    }
-    //strip.setPixelColor(led, strip.Color(255,0,0,0));
-    //strip.show();
-    //delay(20);
-    //strip.setPixelColor(led, strip.Color(0,0,0,0));
-    //strip.show();
-  //}
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int brightness = constrain(map(vReal[i], 0, 80, 0, 255), 0, 255);
+      strip.setPixelColor(i, strip.Color(brightness,100,0,0));
+      strip.show();
+      //Serial.println(brightness);
+      //Serial.print((i * 1.0 * SAMPLING_FREQUENCY) / SAMPLES, 1);
+      //Serial.print(" ");
+      //Serial.println(vReal[i], 1);    //View only this line in serial plotter to visualize the bins
+  }
 }
 
 // Fill the dots one after the other with a color
