@@ -54,7 +54,7 @@ void loop () {
   int atThreshold = digitalRead(DIG_PIN);
   int anRaw = analogRead(AN_PIN);
 
-  //Serial.println(anRaw);
+  Serial.println(anRaw);
 
   /*SAMPLING*/
   for(int i=0; i<SAMPLES; i++)
@@ -240,7 +240,7 @@ void fullWhite() {
     for(uint16_t i=0; i<strip.numPixels(); i++) {
         strip.setPixelColor(i, strip.Color(0,0,0, 255 ) );
     }
-      strip.show();
+    strip.show();
 }
 
 
