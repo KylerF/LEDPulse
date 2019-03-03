@@ -2,15 +2,15 @@
 #include "arduinoFFT.h"
  
 #define SAMPLES 32             //Must be a power of 2
-#define SAMPLING_FREQUENCY 7500 //Hz, must be less than 10000 due to ADC
+#define SAMPLING_FREQUENCY 1000 //Hz, must be less than 10000 due to ADC
 
-arduinoFFT FFT = arduinoFFT();
- 
-unsigned int sampling_period_us;
-unsigned long microseconds;
- 
-double vReal[SAMPLES];
-double vImag[SAMPLES];
+#define DIG_PIN 7
+#define AN_PIN A0
+#define LED_PIN 11
+#define BUTTON_PIN 2
+
+#define NUM_LEDS 30
+#define BRIGHTNESS 100
 
 int gamma[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -31,19 +31,27 @@ int gamma[] = {
   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 
 };
 
-#define DIG_PIN 7
-#define AN_PIN A0
-#define LED_PIN 11
-
-#define NUM_LEDS 30
-#define BRIGHTNESS 60
-
-int n = 0;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRBW + NEO_KHZ800);
+arduinoFFT FFT = arduinoFFT();
 
+unsigned int sampling_period_us;
+unsigned long microseconds;
+
+double vReal[SAMPLES];
+double vImag[SAMPLES];
+
+int currentMode = 0;
+int modeCount = 7;
+int shouldSwitch = 0;
+
+// 0 - 255
+int sensitivity = 120;
+  
 void setup() {
   Serial.begin(9600);
   pinMode(DIG_PIN, INPUT);
+  pinMode(BUTTON_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), nextMode, RISING);
 
   strip.setBrightness(BRIGHTNESS);
   strip.begin();
@@ -52,11 +60,153 @@ void setup() {
   
 void loop () {
   int atThreshold = digitalRead(DIG_PIN);
-  int anRaw = analogRead(AN_PIN);
+  sampleFFT();
 
-  Serial.println(anRaw);
+  runCurrentMode();
+}
 
-  /*SAMPLING*/
+void nextMode() {
+  // Switch off LEDs
+  for(int i=0; i<NUM_LEDS; i++) {
+    strip.setPixelColor(i, strip.Color(0,0,0,0));
+    strip.show();
+  }
+  
+  currentMode = (currentMode + 1) % modeCount;
+  delay(200);
+}
+
+void runCurrentMode() {
+  switch(currentMode) {
+    case 0:
+      rawFFTMode();
+      break;
+    case 1:
+      rawFFTBluez();
+      break;
+    case 2:
+      rawFFT3();
+      break;
+    case 3:
+      rawFFT4();
+      break;
+    case 4:
+      rawFFT5();
+      break;
+    case 5:
+      rawFFT6();
+      break;
+    case 6:
+      rawFFT7();
+      break;
+  }
+}
+
+void idleMode() {
+  colorWipe(strip.Color(255, 0, 0), 5); // Red
+  colorWipe(strip.Color(0, 255, 0), 5); // Green
+  colorWipe(strip.Color(0, 0, 255), 5); // Blue
+  colorWipe(strip.Color(0, 0, 0, 255), 5); // White
+
+  whiteOverRainbow(20,75,5);  
+
+  pulseWhite(1); 
+
+  rainbowFade2White(3,3,1);
+}
+
+void rawFFTMode() {
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int r = constrain(map(vReal[i], 0, sensitivity, 0, 255), 0, 255);
+      int g = constrain(map(vReal[i], sensitivity, 0, 0, 255), 0, 255);
+      int b = constrain(map(vReal[i], 0, 80, 0, 255), 0, 255);
+      
+      strip.setPixelColor(i, strip.Color(r,g,0,0));
+      strip.show();
+  }
+}
+
+void rawFFTBluez() {
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int r = constrain(map(vReal[i], 0, sensitivity, 0, 255), 0, 255);
+      int g = constrain(map(vReal[i], sensitivity, 0, 0, 255), 0, 255);
+      int b = constrain(map(vReal[i], 0, 80, 0, 100), 0, 255);
+      int w = constrain(map(vReal[i], 0, 80, 0, 10), 0, 255);
+      
+      strip.setPixelColor(i, strip.Color(r,g,b,0));
+      strip.show();
+  }
+}
+
+void rawFFT3() {
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int r = constrain(map(vReal[i], 0, sensitivity, 50, 0), 0, 255);
+      int g = constrain(map(vReal[i], 0, 0, 0, 0), 0, 255);
+      int b = constrain(map(vReal[i], sensitivity, 0, 0, 100), 0, 255);
+      int w = constrain(map(vReal[i], 0, 80, 0, 10), 0, 255);
+      
+      strip.setPixelColor(i, strip.Color(r,g,b,0));
+      strip.show();
+  }
+}
+
+void rawFFT4() {
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int r = constrain(map(vReal[i], sensitivity, 0, 0, 10), 0, 255);
+      int g = constrain(map(vReal[i], sensitivity, 0, 0, 50), 0, 255);
+      int b = constrain(map(vReal[i], sensitivity, 0, 0, 25), 0, 255);
+      int w = constrain(map(vReal[i], 0, 0, 0, 0), 0, 255);
+      
+      strip.setPixelColor(i, strip.Color(r,g,b,20));
+      strip.show();
+  }
+}
+
+void rawFFT5() {
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int r = constrain(map(vReal[i], sensitivity, 0, 0, 255), 0, 255);
+      int g = constrain(map(vReal[i], sensitivity, 0, 0, 255), 0, 255);
+      int b = constrain(map(vReal[i], sensitivity, 0, 0, 255), 0, 255);
+      int w = constrain(map(vReal[i], 0, 0, 0, 0), 0, 255);
+      
+      strip.setPixelColor(i, strip.Color(r,g,b,0));
+      strip.show();
+  }
+}
+
+void rawFFT6() {
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int r = constrain(map(vReal[i], 0, sensitivity, 0, 255), 0, 255);
+      int g = constrain(map(vReal[i], 0, 0, 0, 0), 0, 255);
+      int b = constrain(map(vReal[i], sensitivity, 0, 0, 255), 0, 255);
+      int w = constrain(map(vReal[i], 0, 0, 0, 0), 0, 255);
+      
+      strip.setPixelColor(i, strip.Color(r,g,b,0));
+      strip.show();
+  }
+}
+
+void rawFFT7() {
+  for(int i=0; i<(SAMPLES); i++) {
+      /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
+      int r = constrain(map(vReal[i], sensitivity, 0, 0, 255), 0, 255);
+      int g = constrain(map(vReal[i], 0, 0, 0, 0), 0, 255);
+      int b = constrain(map(vReal[i], 0, 0, 0, 255), 0, 255);
+      int w = constrain(map(vReal[i], 0, sensitivity, 0, 0), 0, 255);
+      
+      strip.setPixelColor(i, strip.Color(r,g,b,w));
+      strip.show();
+  }
+}
+
+void sampleFFT() {
+  /*FFT SAMPLING*/
   for(int i=0; i<SAMPLES; i++)
   {
       microseconds = micros();    //Overflows after around 70 minutes!
@@ -72,27 +222,6 @@ void loop () {
   FFT.Windowing(vReal, SAMPLES, FFT_WIN_TYP_HAMMING, FFT_FORWARD);
   FFT.Compute(vReal, vImag, SAMPLES, FFT_FORWARD);
   FFT.ComplexToMagnitude(vReal, vImag, SAMPLES);
-  double peak = FFT.MajorPeak(vReal, SAMPLES, SAMPLING_FREQUENCY);
-  int peakLed = map(peak, 0, 530, 0, 30);
-
-  //if (atThreshold) {
-    for(int i=0; i<(SAMPLES); i++)
-    {
-        /*View all these three lines in serial terminal to see which frequencies has which amplitudes*/
-        int brightness = constrain(map(vReal[i], 0, 80, 0, 255), 0, 255);
-        strip.setPixelColor(i, strip.Color(brightness,100,0,0));
-        strip.show();
-        //Serial.println(brightness);
-        //Serial.print((i * 1.0 * SAMPLING_FREQUENCY) / SAMPLES, 1);
-        //Serial.print(" ");
-        //Serial.println(vReal[i], 1);    //View only this line in serial plotter to visualize the bins
-    }
-    //strip.setPixelColor(led, strip.Color(255,0,0,0));
-    //strip.show();
-    //delay(20);
-    //strip.setPixelColor(led, strip.Color(0,0,0,0));
-    //strip.show();
-  //}
 }
 
 // Fill the dots one after the other with a color
@@ -121,7 +250,6 @@ void pulseWhite(uint8_t wait) {
         strip.show();
       }
 }
-
 
 void rainbowFade2White(uint8_t wait, int rainbowLoops, int whiteLoops) {
   float fadeMax = 100.0;
